@@ -19,7 +19,7 @@ pip (Python package installer)
          On Windows:
 
         .\env\Scripts\activate
-        
+
         On macOS and Linux:
 
         source env/bin/activate
@@ -27,8 +27,4 @@ pip (Python package installer)
         pip install -r requirements.txt
 
 5. Run the Application
-<<<<<<< HEAD
         python mainGUI.py
-=======
-        python mainGUI.py
->>>>>>> c9c49037cc0774b45b22ec263446329374e82309
