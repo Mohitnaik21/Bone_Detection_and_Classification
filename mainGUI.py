@@ -5,7 +5,7 @@ import pyautogui
 import pygetwindow
 from PIL import ImageTk, Image
 
-from predictions import predict
+from predictions import predict_with_lrp
 
 # global variables
 
@@ -14,116 +14,81 @@ folder_path = project_folder + '/images/'
 
 filename = ""
 
-
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("Bone Fracture Detection & Classification")
-        self.geometry(f"{700}x{740}")
+        self.geometry(f"{1000}x{700}")
+
+        # Header Frame
         self.head_frame = ctk.CTkFrame(master=self)
-        self.head_frame.pack(pady=20, padx=60, fill="both", expand=True)
-        self.main_frame = ctk.CTkFrame(master=self)
-        self.main_frame.pack(pady=20, padx=60, fill="both", expand=True)
+        self.head_frame.pack(pady=20, padx=20, fill="both")
+
         self.head_label = ctk.CTkLabel(master=self.head_frame, text="Bone Fracture Detection & Classification",
-                                       font=(ctk.CTkFont("Roboto"), 28))
-        self.head_label.pack(pady=20, padx=10, anchor="nw", side="left")
-        img1 = ctk.CTkImage(Image.open(folder_path + "info.png"))
+                                       font=("Roboto", 28))
+        self.head_label.pack(pady=10, padx=10)
 
-        self.img_label = ctk.CTkButton(master=self.head_frame, text="", image=img1, command=self.open_image_window,
-                                       width=40, height=40)
+        # Main Frame
+        self.main_frame = ctk.CTkFrame(master=self)
+        self.main_frame.pack(pady=20, padx=20, fill="both", expand=True)
 
-        self.img_label.pack(pady=10, padx=10, anchor="nw", side="right")
-
+        # Info Label
         self.info_label = ctk.CTkLabel(master=self.main_frame,
-                                       text="Bone fracture detection & classification system, upload an x-ray image for fracture detection.",
-                                       wraplength=300, font=(ctk.CTkFont("Roboto"), 18))
+                                       text="Upload an X-ray image to predict body part and fracture status. Results will be displayed with a heatmap.",
+                                       wraplength=600, font=("Roboto", 16))
         self.info_label.pack(pady=10, padx=10)
 
+        # Image and Heatmap Frames
+        self.image_frame = ctk.CTkFrame(master=self.main_frame)
+        self.image_frame.pack(pady=10, padx=10, fill="both", expand=True)
+
+        self.original_image_label = ctk.CTkLabel(master=self.image_frame, text="Original Image")
+        self.original_image_label.grid(row=0, column=0, padx=10, pady=10)
+
+        self.heatmap_label = ctk.CTkLabel(master=self.image_frame, text="Heatmap")
+        self.heatmap_label.grid(row=0, column=1, padx=10, pady=10)
+
+        # Buttons
         self.upload_btn = ctk.CTkButton(master=self.main_frame, text="Upload Image", command=self.upload_image)
-        self.upload_btn.pack(pady=0, padx=1)
-
-        self.frame2 = ctk.CTkFrame(master=self.main_frame, fg_color="transparent", width=256, height=256)
-        self.frame2.pack(pady=10, padx=1)
-
-        img = Image.open(folder_path + "Question_Mark.jpg")
-        img_resized = img.resize((int(256 / img.height * img.width), 256))  # new width & height
-        img = ImageTk.PhotoImage(img_resized)
-
-        self.img_label = ctk.CTkLabel(master=self.frame2, text="", image=img)
-        self.img_label.pack(pady=1, padx=10)
-
+        self.upload_btn.pack(pady=10)
 
         self.predict_btn = ctk.CTkButton(master=self.main_frame, text="Predict", command=self.predict_gui)
-        self.predict_btn.pack(pady=0, padx=1)
+        self.predict_btn.pack(pady=10)
 
-        self.result_frame = ctk.CTkFrame(master=self.main_frame, fg_color="transparent", width=200, height=100)
-        self.result_frame.pack(pady=5, padx=5)
-
-        self.loader_label = ctk.CTkLabel(master=self.main_frame, width=100, height=100, text="")
-        self.loader_label.pack(pady=3, padx=3)
-
-        self.res1_label = ctk.CTkLabel(master=self.result_frame, text="")
-        self.res1_label.pack(pady=5, padx=20)
-
-        self.res2_label = ctk.CTkLabel(master=self.result_frame, text="")
-        self.res2_label.pack(pady=5, padx=20)
-
-        self.save_btn = ctk.CTkButton(master=self.result_frame, text="Save Result", command=self.save_result)
-
-        self.save_label = ctk.CTkLabel(master=self.result_frame, text="")
-
-
+        # Results Display
+        self.result_label = ctk.CTkLabel(master=self.main_frame, text="", font=("Roboto", 16))
+        self.result_label.pack(pady=10)
 
     def upload_image(self):
         global filename
-        f_types = [("All Files", "*.*")]
-        filename = filedialog.askopenfilename(filetypes=f_types, initialdir=project_folder+'/test/Wrist/')
-        self.save_label.configure(text="")
-        self.res2_label.configure(text="")
-        self.res1_label.configure(text="")
-        self.img_label.configure(self.frame2, text="", image="")
-        img = Image.open(filename)
-        img_resized = img.resize((int(256 / img.height * img.width), 256))  # new width & height
-        img = ImageTk.PhotoImage(img_resized)
-        self.img_label.configure(self.frame2, image=img, text="")
-        self.img_label.image = img
-        self.save_btn.pack_forget()
-        self.save_label.pack_forget()
+        f_types = [("Image Files", "*.png;*.jpg;*.jpeg")]
+        filename = filedialog.askopenfilename(filetypes=f_types, initialdir=project_folder)
+
+        if filename:
+            img = Image.open(filename).resize((256, 256))
+            self.original_image = ImageTk.PhotoImage(img)
+            self.original_image_label.configure(image=self.original_image, text="")
 
     def predict_gui(self):
         global filename
-        bone_type_result = predict(filename)
-        result = predict(filename, bone_type_result)
-        print(result)
-        if result == 'fractured':
-            self.res2_label.configure(text_color="RED", text="Result: Fractured", font=(ctk.CTkFont("Roboto"), 24))
-        else:
-            self.res2_label.configure(text_color="GREEN", text="Result: Normal", font=(ctk.CTkFont("Roboto"), 24))
-        bone_type_result = predict(filename, "Parts")
-        self.res1_label.configure(text="Type: " + bone_type_result, font=(ctk.CTkFont("Roboto"), 24))
-        print(bone_type_result)
-        self.save_btn.pack(pady=10, padx=1)
-        self.save_label.pack(pady=5, padx=20)
 
-    def save_result(self):
-        tempdir = filedialog.asksaveasfilename(parent=self, initialdir=project_folder + '/PredictResults/',
-                                               title='Please select a directory and filename', defaultextension=".png")
-        screenshots_dir = tempdir
-        window = pygetwindow.getWindowsWithTitle('Bone Fracture Detection & Classification')[0]
-        left, top = window.topleft
-        right, bottom = window.bottomright
-        pyautogui.screenshot(screenshots_dir)
-        im = Image.open(screenshots_dir)
-        im = im.crop((left + 10, top + 35, right - 10, bottom - 10))
-        im.save(screenshots_dir)
-        self.save_label.configure(text_color="WHITE", text="Saved!", font=(ctk.CTkFont("Roboto"), 16))
+        if not filename:
+            self.result_label.configure(text="Please upload an image first!", text_color="red")
+            return
 
-    def open_image_window(self):
-        im = Image.open(folder_path + "rules.jpeg")
-        im = im.resize((700, 700))
-        im.show()
+        # Predict body part and fracture status
+        body_part, _ = predict_with_lrp(filename, "Parts")
+        fracture_status, heatmap_path = predict_with_lrp(filename, body_part)
 
+        # Display results
+        self.result_label.configure(text=f"Body Part: {body_part}\nFracture Status: {fracture_status}", text_color="green")
+
+        # Display heatmap if available
+        if heatmap_path:
+            heatmap_img = Image.open(heatmap_path).resize((256, 256))
+            self.heatmap_image = ImageTk.PhotoImage(heatmap_img)
+            self.heatmap_label.configure(image=self.heatmap_image, text="")
 
 if __name__ == "__main__":
     app = App()

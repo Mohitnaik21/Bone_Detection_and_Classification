@@ -1,0 +1,13 @@
+Classification Report:
+              precision    recall  f1-score   support
+
+   fractured       0.69      0.47      0.56       182
+      normal       0.80      0.91      0.85       419
+
+    accuracy                           0.78       601
+   macro avg       0.74      0.69      0.70       601
+weighted avg       0.76      0.78      0.76       601
+
+Confusion Matrix:
+[[ 85  97]
+ [ 38 381]]

@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-
+from sklearn.metrics import classification_report, confusion_matrix
+import numpy as np
 
 # load images to build and train the model
 #                       ....                                     /    img1.jpg
@@ -147,6 +148,26 @@ model.save(THIS_FOLDER + "/weights/ResNet50_BodyParts.h5")
 results = model.evaluate(test_images, verbose=0)
 print(results)
 print(f"Test Accuracy: {np.round(results[1] * 100, 2)}%")
+
+# Get true labels and predictions
+y_true = test_images.classes  # True labels from the test generator
+y_pred_probs = model.predict(test_images)  # Predicted probabilities
+y_pred = np.argmax(y_pred_probs, axis=1)  # Convert probabilities to class indices
+
+# Classification Report
+target_names = list(test_images.class_indices.keys())  # Get class names from the generator
+print("\nClassification Report:")
+print(classification_report(y_true, y_pred, target_names=target_names))
+
+# Confusion Matrix
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_true, y_pred))
+
+with open("evaluation_results.txt", "w") as f:
+    f.write("Classification Report:\n")
+    f.write(classification_report(y_true, y_pred, target_names=target_names))
+    f.write("\nConfusion Matrix:\n")
+    f.write(np.array2string(confusion_matrix(y_true, y_pred)))
 
 
 # create plots for accuracy and save it
