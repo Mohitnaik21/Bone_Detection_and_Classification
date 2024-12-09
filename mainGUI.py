@@ -91,7 +91,7 @@ class App(ctk.CTk):
 
     def upload_image(self):
         global filename
-        f_types = [("Image Files", "*.png;*.jpg;*.jpeg")]
+        f_types = [("Image Files", "*.*")]
         filename = filedialog.askopenfilename(filetypes=f_types, initialdir=project_folder)
 
         if filename:
